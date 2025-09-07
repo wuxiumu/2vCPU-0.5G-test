@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# 用法: ./add_slim_site.sh www.aicaocai.com  --ssl[--ssl]
+# 用法: ./add_slim_site.sh aicaocai.com  --ssl
 
 DOMAIN=$1
 ENABLE_SSL=$2
@@ -18,10 +18,25 @@ echo "🚀 开始为 $DOMAIN 创建站点..."
 sudo mkdir -p $WEBROOT/public
 sudo chown -R www-data:www-data $WEBROOT
 
-# 2. 生成 index.php
-cat <<EOF | sudo tee $WEBROOT/public/index.php > /dev/null
-<?php
-echo "Hello from $DOMAIN!";
+# 2. 生成 index.html
+cat <<EOF | sudo tee $WEBROOT/public/index.html > /dev/null
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>$DOMAIN</title>
+  <style>
+    body { margin:0; min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#f8fafc; font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Arial,sans-serif;}
+    .logo { display:block; margin:0 auto 26px auto; max-width:180px; width:55vw;}
+    .title { font-size:2rem; font-weight:700; color:#222; text-align:center; letter-spacing:.03em;}
+  </style>
+</head>
+<body>
+  <img class="logo" src="https://img20.360buyimg.com/openfeedback/jfs/t1/328719/36/17066/56766/68bda4d9F886063fc/1d01b115131a1a7e.png" alt="logo" />
+  <div class="title">$DOMAIN</div>
+</body>
+</html>
 EOF
 
 # 3. 创建 Nginx 配置文件
@@ -31,15 +46,20 @@ server {
     server_name $DOMAIN;
 
     root $WEBROOT/public;
-    index index.php index.html;
-
-    location / {
-        try_files \$uri \$uri/ /index.php?\$query_string;
-    }
+    index index.html index.php;
 
     location ~ \.php\$ {
         include snippets/fastcgi-php.conf;
         fastcgi_pass unix:/run/php/php7.4-fpm.sock;
+    }
+
+    location ~* \.(js|css|png|jpg|jpeg|gif|svg|ico)$ {
+        expires 7d;
+        add_header Cache-Control "public";
+    }
+
+    location / {
+        try_files \$uri \$uri/ /index.html;
     }
 
     location ~ /\.ht {

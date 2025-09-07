@@ -70,10 +70,25 @@
     </form>
 </div>
 <script>
-  // 👇密码配置
   const PASSWORD = '123456'; // 这里改成你的密码
-  // 👇登录后跳转页面
   const LOGIN_REDIRECT = '/probe.html';
+  const LOGIN_COOKIE_KEY = 'login_ok';
+
+  function setCookie(name, value, days = 2) {
+    const d = new Date();
+    d.setTime(d.getTime() + days*24*60*60*1000);
+    document.cookie = `${name}=${value};expires=${d.toUTCString()};path=/;SameSite=Strict;`;
+  }
+  function getCookie(name) {
+    return document.cookie.split(';').map(s=>s.trim()).find(c=>c.startsWith(name+'='))?.split('=')[1];
+  }
+  function delCookie(name) {
+    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+  }
+
+  if (getCookie(LOGIN_COOKIE_KEY) === '1') {
+    window.location.href = LOGIN_REDIRECT;
+  }
 
   const $form = document.getElementById('loginForm');
   const $pwd = document.getElementById('pwd');
@@ -81,6 +96,7 @@
 
   function login() {
     if ($pwd.value === PASSWORD) {
+      setCookie(LOGIN_COOKIE_KEY, '1');
       $err.textContent = '';
       $pwd.classList.remove('err');
       window.location.href = LOGIN_REDIRECT;
