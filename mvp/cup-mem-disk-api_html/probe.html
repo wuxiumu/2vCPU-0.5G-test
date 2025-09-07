@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>PHP 探针 · 苹果风</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+            margin: 40px 0 0 0;
+            background: #f7fafd;
+            color: #1a1a1a;
+            min-height: 100vh;
+        }
+        h1 {
+            font-weight: 900;
+            font-size: 2.6rem;
+            margin: 0 0 30px 50px;
+            letter-spacing: -0.02em;
+        }
+        .box {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 32px;
+            margin: 0 0 0 50px;
+        }
+        .panel {
+            background: linear-gradient(135deg, #fff, #f5f8fb);
+            border: 1px solid #e5e7ef;
+            border-radius: 22px;
+            padding: 32px 32px 18px 32px;
+            min-width: 340px;
+            max-width: 420px;
+            flex: 1 1 340px;
+            box-shadow: none;
+            transition: box-shadow .2s;
+            margin-bottom: 32px;
+            overflow: hidden;
+        }
+        .panel:hover {
+            box-shadow: 0 6px 18px #c2daff18;
+        }
+        h2 {
+            font-weight: 700;
+            font-size: 1.32rem;
+            margin-bottom: 20px;
+            color: #1a1a1a;
+            letter-spacing: 0.01em;
+        }
+        .value-main {
+            font-size: 2.4em;
+            font-weight: bold;
+            color: #007aff;
+            margin-bottom: 4px;
+            font-family: "SF Pro Display", "Helvetica Neue", Arial, system-ui, sans-serif;
+            display: inline-block;
+        }
+        .value-main.orange { color: #ff9500; }
+        .value-main.red { color: #ff3b30; }
+        .unit {
+            font-size: 1.1em;
+            color: #888;
+            margin-left: 6px;
+        }
+        .usage-desc {
+            margin: 6px 0 12px 0;
+            font-size: 1.1em;
+            color: #5c5c5c;
+            font-weight: 500;
+        }
+        .progress-bar-bg {
+            height: 18px;
+            background: #e9f1fd;
+            border-radius: 9px;
+            position: relative;
+            margin-bottom: 8px;
+            width: 96%;
+            margin-right: auto;
+            margin-left: auto;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            border-radius: 9px;
+            background: linear-gradient(90deg,#007aff,#a3d8ff 70%);
+            transition: width .5s;
+            min-width: 4px;
+        }
+        .progress-bar.orange {
+            background: linear-gradient(90deg,#ff9500,#ffd79b 70%);
+        }
+        .progress-bar.red {
+            background: linear-gradient(90deg,#ff3b30,#ffd7d7 70%);
+        }
+        .desc-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 6px 0 0 0;
+            color: #727278;
+            font-size: 1em;
+        }
+        .value {
+            font-size: 1.15em;
+            color: #007aff;
+            font-weight: bold;
+        }
+        .value.red { color: #ff3b30; }
+        .value.orange { color: #ff9500; }
+        .danger-tip {
+            font-size: 1.04em;
+            color: #ff3b30;
+            background: #fff2f2;
+            border-radius: 7px;
+            padding: 4px 8px;
+            margin: 9px 0 0 0;
+            font-weight: bold;
+            display: inline-block;
+        }
+        .capsule {
+          display: inline-block;
+          border-radius: 8px;
+          background: #f2f4fa;
+          color: #007aff;
+          padding: 3px 10px;
+          font-size: 0.97em;
+          margin: 2px 8px 2px 0;
+          font-weight: 500;
+        }
+        .capsule.red { color: #ff3b30; background: #fff4f4; }
+        .capsule.orange { color: #ff9500; background: #fff8e1; }
+        .capsule.green { color: #34c759; background: #e8fbf1; }
+    </style>
+</head>
+<body>
+<h1>PHP 探针 · 苹果官网风格</h1>
+<div class="box">
+    <div class="panel">
+        <h2>服务器信息</h2>
+        <div id="info"></div>
+    </div>
+    <div class="panel">
+        <h2>内存使用率</h2>
+        <div id="memMain" class="value-main"></div>
+        <div class="usage-desc" id="memDesc"></div>
+        <div class="progress-bar-bg">
+            <div id="memProgress" class="progress-bar"></div>
+        </div>
+        <div class="desc-row" id="memDetail"></div>
+        <div id="memWarn"></div>
+    </div>
+    <div class="panel">
+        <h2>硬盘使用率</h2>
+        <div id="diskMain" class="value-main"></div>
+        <div class="usage-desc" id="diskDesc"></div>
+        <div class="progress-bar-bg">
+            <div id="diskProgress" class="progress-bar"></div>
+        </div>
+        <div class="desc-row" id="diskDetail"></div>
+        <div id="diskWarn"></div>
+    </div>
+    <div class="panel">
+        <h2>CPU负载(1/5/15min)</h2>
+        <canvas id="cpuChart" width="320" height="180"></canvas>
+    </div>
+    <div class="panel">
+        <h2>CPU占用率</h2>
+        <div id="cpuUsageMain" class="value-main"></div>
+        <div class="usage-desc">当前CPU占用率</div>
+        <div class="progress-bar-bg">
+            <div id="cpuUsageProgress" class="progress-bar"></div>
+        </div>
+        <div class="desc-row" id="cpuUsageDetail"></div>
+        <div id="cpuUsageWarn"></div>
+    </div>
+</div>
+<div class="box">
+    <div class="panel">
+      <h2>PHP 环境</h2>
+      <div class="desc-row">
+        <span>版本：<span class="value" id="phpVer"></span></span>
+        <span>SAPI：<span class="value" id="phpSapi"></span></span>
+      </div>
+      <div class="desc-row">
+        <span>memory_limit：<span class="value" id="phpMemLimit"></span></span>
+        <span>post_max_size：<span class="value" id="phpPostMax"></span></span>
+      </div>
+      <div class="desc-row">
+        <span>upload_max_filesize：<span class="value" id="phpUploadMax"></span></span>
+      </div>
+      <div style="margin:12px 0 4px 0;">已加载扩展：</div>
+      <div id="phpExts" style="overflow-x:auto;white-space:nowrap;font-size:0.95em;"></div>
+      <div style="margin-top:8px;">禁用函数：</div>
+      <div id="phpDisableFuncs" style="color:#888;font-size:0.95em;"></div>
+    </div>
+    <div class="panel">
+      <h2>进程&扩展支持</h2>
+      <div id="processList"></div>
+      <div style="margin-top:8px;">数据库支持：</div>
+      <div id="dbSupport"></div>
+      <div style="margin-top:8px;">扩展检测：</div>
+      <div id="extSupport"></div>
+    </div>
+    <div class="panel">
+      <h2>函数可用性</h2>
+      <div id="funcTestList"></div>
+    </div>
+  </div>
+<script>
+  function bytesFormat(n) {
+    if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
+    if (n < 1024 * 1024 * 1024) return (n / 1024 / 1024).toFixed(1) + ' MB';
+    return (n / 1024 / 1024 / 1024).toFixed(2) + ' GB';
+  }
+  async function fetchStatus() {
+    const res = await fetch('status.php?' + Date.now());
+    return res.json();
+  }
+  function renderInfo(data) {
+    document.getElementById('info').innerHTML = `
+    <div class="value">时间：${data.time}</div>
+    <div>系统：${data.os}</div>
+    <div>PHP版本：${data.php_version}</div>
+    <div>运行时间：${Math.floor(data.uptime_seconds/3600)}小时${Math.floor((data.uptime_seconds%3600)/60)}分</div>
+  `;
+  }
+  function renderMemDisk(data, type) {
+    let used, total, free, percent, mainId, descId, progressId, detailId, warnId;
+    if (type === 'mem') {
+      used = data.memory.used * 1024; // kB to bytes
+      total = data.memory.total * 1024;
+      free = data.memory.available * 1024;
+      mainId = 'memMain'; descId = 'memDesc'; progressId = 'memProgress'; detailId = 'memDetail'; warnId = 'memWarn';
+    } else {
+      used = data.disk.used; total = data.disk.total; free = data.disk.free;
+      mainId = 'diskMain'; descId = 'diskDesc'; progressId = 'diskProgress'; detailId = 'diskDetail'; warnId = 'diskWarn';
+    }
+    percent = total > 0 ? used / total : 0;
+    let percentText = (percent * 100).toFixed(1) + '%';
+    // 风格判断
+    let colorClass = '';
+    if (percent > 0.95) colorClass = 'red';
+    else if (percent > 0.8) colorClass = 'orange';
+    // 大号数字
+    document.getElementById(mainId).className = `value-main${colorClass ? ' ' + colorClass : ''}`;
+    document.getElementById(mainId).textContent = percentText;
+    // 文本描述
+    document.getElementById(descId).innerHTML = `<span style="font-weight:600;">已用</span> / 总量 / 可用`;
+    // 进度条
+    let bar = document.getElementById(progressId);
+    bar.className = 'progress-bar' + (colorClass ? ' ' + colorClass : '');
+    bar.style.width = (percent * 100).toFixed(1) + '%';
+    // 详细描述
+    document.getElementById(detailId).innerHTML =
+      `<span>已用 <span class="value${colorClass ? ' ' + colorClass : ''}">${bytesFormat(used)}</span></span>
+     <span>总量 <span class="value">${bytesFormat(total)}</span></span>
+     <span>可用 <span class="value">${bytesFormat(free)}</span></span>`;
+    // 异常预警
+    document.getElementById(warnId).innerHTML =
+      percent > 0.95 ? '<span class="danger-tip">危险：使用率已超95%，请尽快扩容或清理！</span>' :
+        percent > 0.8 ? '<span class="danger-tip" style="color:#ff9500;background:#fff8e1;">注意：已超80%，请留意资源趋势。</span>' : '';
+  }
+  let cpuChart;
+  function renderCharts(data) {
+    const memUsed = ((data.memory.used / data.memory.total) * 100).toFixed(1);
+    const diskUsed = ((data.disk.used / data.disk.total) * 100).toFixed(1);
+    if (!cpuChart) {
+      cpuChart = new Chart(document.getElementById('cpuChart'), {
+        type: 'bar',
+        data: {
+          labels: ['1min', '5min', '15min'],
+          datasets: [{
+            label: '负载',
+            data: data.load,
+            borderWidth: 1,
+            backgroundColor: ['#007aff','#ffb400','#ff3b30'],
+          }]
+        },
+        options: { plugins: { legend: { display: false } } }
+      });
+    } else {
+      cpuChart.data.datasets[0].data = data.load;
+      cpuChart.update();
+    }
+  }
+  function renderPhpEnv(data) {
+    document.getElementById('phpVer').textContent = data.php_version || '';
+    document.getElementById('phpSapi').textContent = data.php.sapi || '';
+    document.getElementById('phpMemLimit').textContent = data.php.memory_limit || '';
+    document.getElementById('phpPostMax').textContent = data.php.post_max_size || '';
+    document.getElementById('phpUploadMax').textContent = data.php.upload_max_filesize || '';
+    document.getElementById('phpExts').innerHTML = (data.php.loaded_extensions || [])
+      .map(e => `<span class="capsule">${e}</span>`).join('');
+    document.getElementById('phpDisableFuncs').textContent = data.php.disabled_functions || '无';
+  }
+  function renderProcessAndDb(data) {
+    document.getElementById('processList').innerHTML = Object.entries(data.process || {})
+      .map(([k,v]) => `<span class="capsule${v?' green':' red'}">${k}:${v?'运行':'未运行'}</span>`).join('');
+    document.getElementById('dbSupport').innerHTML = Object.entries(data.db || {})
+      .map(([k,v]) => `<span class="capsule${v?'':' orange'}">${k}</span>`).join('');
+    if (data.php.extensions_status) {
+      document.getElementById('extSupport').innerHTML = Object.entries(data.php.extensions_status)
+        .map(([k,v]) => `<span class="capsule${v?'':' red'}">${k}</span>`).join('');
+    }
+  }
+  function renderFuncTest(data) {
+    document.getElementById('funcTestList').innerHTML = Object.entries(data.function_test || {})
+      .map(([k,v]) => `<span class="capsule${v?' green':' red'}">${k}</span>`).join('');
+  }
+  function renderCpuUsage(data) {
+    if (!data.load) return;
+    let cpuCores = (data.cpu && data.cpu.cores) ? data.cpu.cores : 1;
+    let load = data.load ? data.load[0] : 0;
+    let percent = cpuCores > 0 ? load / cpuCores : 0;
+    percent = percent > 1 ? 1 : percent;
+    const percentText = (percent * 100).toFixed(1) + '%';
+    let colorClass = '';
+    if (percent * 100 > 95) colorClass = 'red';
+    else if (percent * 100 > 80) colorClass = 'orange';
+    const mainEl = document.getElementById('cpuUsageMain');
+    mainEl.className = `value-main${colorClass ? ' ' + colorClass : ''}`;
+    mainEl.textContent = percentText;
+    const bar = document.getElementById('cpuUsageProgress');
+    bar.className = 'progress-bar' + (colorClass ? ' ' + colorClass : '');
+    bar.style.width = (percent * 100).toFixed(1) + '%';
+    document.getElementById('cpuUsageDetail').innerHTML =
+      `CPU核心数 <span class="value">${cpuCores}</span> 负载(1min) <span class="value">${load.toFixed(2)}</span>`;
+    document.getElementById('cpuUsageWarn').innerHTML =
+      percent * 100 > 95 ? '<span class="danger-tip">危险：CPU占用率已超95%，请注意性能瓶颈！</span>' :
+        percent * 100 > 80 ? '<span class="danger-tip" style="color:#ff9500;background:#fff8e1;">注意：CPU占用率超过80%，请关注。</span>' : '';
+  }
+  async function update() {
+    try {
+      const data = await fetchStatus();
+      renderInfo(data);
+      renderMemDisk(data, 'mem');
+      renderMemDisk(data, 'disk');
+      renderCharts(data);
+      renderPhpEnv(data);
+      renderProcessAndDb(data);
+      renderFuncTest(data);
+      renderCpuUsage(data);
+    } catch (e) {
+      document.getElementById('info').innerHTML = `<span style="color:red;">无法获取数据</span>`;
+    }
+  }
+  update();
+  setInterval(update, 6000);
+</script>
+</body>
+</html>
